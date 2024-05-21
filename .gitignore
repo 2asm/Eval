@@ -1,5 +1,8 @@
 # Ignore Gradle project-specific cache directory
 .gradle
+lexer.ras
 
 # Ignore Gradle build output directory
 build
+
+app/bin/

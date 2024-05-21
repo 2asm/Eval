@@ -3,9 +3,9 @@ package org.example;
 public class Token {
 
     TokenType type;
-    Double value = 0.0;
+    double value = 0.0;
 
-    public Token(TokenType type, Double value) {
+    public Token(TokenType type, double value) {
         this.type = type;
         this.value = value;
     }

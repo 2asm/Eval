@@ -1,13 +1,28 @@
 package org.example;
 
+import java.util.ArrayList;
+
 public class Parser {
-    Lexer lexer;
+    private ArrayList<Token> tokens;
+    private int pos;
 
     Parser(String input) {
-        lexer = new Lexer(input);
+        Lexer lexer = new Lexer(input);
+        this.tokens = lexer.Lex();
+        this.pos = 0;
     }
 
-    int[] prefixBindingPower(Token t) {
+    private Token Peek() {
+        return tokens.get(pos);
+    }
+
+    private Token Next() {
+        Token out = tokens.get(pos);
+        pos += 1;
+        return out;
+    }
+
+    private int[] prefixBindingPower(Token t) {
         int[] out = { -1, -1 };
         switch (t.type) {
             case TokenType.Plus:
@@ -20,7 +35,7 @@ public class Parser {
         }
     }
 
-    int[] postfixBindingPower(Token t) {
+    private int[] postfixBindingPower(Token t) {
         int[] out = { -1, -1 };
         switch (t.type) {
             case TokenType.LParen:
@@ -34,7 +49,7 @@ public class Parser {
         }
     }
 
-    int[] infixBindingPower(Token t) {
+    private int[] infixBindingPower(Token t) {
         int[] out = { -1, -1 };
         switch (t.type) {
             case TokenType.Exp:
@@ -74,9 +89,9 @@ public class Parser {
         }
     }
 
-    Token prefixOp(Token op, Token rhs) {
+    private Token prefixOp(Token op, Token rhs) {
         if (rhs.type != TokenType.Number)
-            return new Token(TokenType.Error, 0.0);
+            return new Token(TokenType.Error, 0);
         switch (op.type) {
             case TokenType.Plus:
                 return rhs;
@@ -84,48 +99,39 @@ public class Parser {
                 rhs.value = -rhs.value;
                 return rhs;
             case TokenType.Tilda:
-                Long num = rhs.value.longValue();
-                if (rhs.value - num != 0)
-                    return new Token(TokenType.Error, 0.0);
-                rhs.value = Double.parseDouble((~num)+"");
+                if (rhs.value % 1 != 0)
+                    return new Token(TokenType.Error, 0);
+                rhs.value = ~(long) rhs.value;
                 return rhs;
             default:
-                return new Token(TokenType.Error, 0.0);
+                return new Token(TokenType.Error, 0);
         }
     }
 
-    Long Factorial(Long n) {
-        try {
-            Long ans = 1L;
-            for (Long i = 1L; i <= n; i++) {
-                ans *= i;
-            }
-            return ans;
-        } catch (Exception e) {
-            return null;
+    private long Factorial(long n) {
+        long ans = 1;
+        for (long i = 1; i <= n; i++) {
+            ans *= i;
         }
+        return ans;
     }
 
-    Token posfixOp(Token op, Token lhs) {
+    private Token posfixOp(Token op, Token lhs) {
         switch (op.type) {
             case TokenType.Fact:
                 if (lhs.type != TokenType.Number)
-                    return new Token(TokenType.Error, 0.0);
-                Long fnum = lhs.value.longValue();
-                if (lhs.value - fnum != 0)
-                    return new Token(TokenType.Error, 0.0);
-                Long f = Factorial(fnum);
-                if (f == null)
-                    return new Token(TokenType.Error, 0.0);
-                lhs.value = Double.parseDouble(f+"");
+                    return new Token(TokenType.Error, 0);
+                if (lhs.value % 1 != 0)
+                    return new Token(TokenType.Error, 0);
+                lhs.value = Factorial((long) lhs.value);
                 return lhs;
             case TokenType.LParen:
                 Token rhs = expr_bp(0);
                 if (rhs.type != TokenType.Number)
-                    return new Token(TokenType.Error, 0.0);
-                Token t = lexer.Next();
+                    return new Token(TokenType.Error, 0);
+                Token t = Next();
                 if (t.type != TokenType.RParen)
-                    return new Token(TokenType.Error, 0.0);
+                    return new Token(TokenType.Error, 0);
                 switch (lhs.type) {
                     case TokenType.Sin:
                         return new Token(TokenType.Number, Math.sin(rhs.value));
@@ -140,21 +146,18 @@ public class Parser {
                     case TokenType.Deg:
                         return new Token(TokenType.Number, Math.toRadians(rhs.value));
                     default:
-                        return new Token(TokenType.Error, 0.0);
+                        return new Token(TokenType.Error, 0);
                 }
             default:
-                return new Token(TokenType.Error, 0.0);
+                return new Token(TokenType.Error, 0);
         }
     }
 
-    Token infixOp(Token op, Token lhs, Token rhs) {
-        if (rhs.type != TokenType.Number)
-            return new Token(TokenType.Error, 0.0);
-        if (lhs.type != TokenType.Number)
-            return new Token(TokenType.Error, 0.0);
+    private Token infixOp(Token op, Token lhs, Token rhs) {
+        if (lhs.type != TokenType.Number || rhs.type != TokenType.Number)
+            return new Token(TokenType.Error, 0);
 
-        Double out;
-        Long lnum, rnum;
+        double out;
         switch (op.type) {
             case TokenType.Plus:
                 out = lhs.value + rhs.value;
@@ -172,83 +175,56 @@ public class Parser {
                 out = lhs.value / rhs.value;
                 break;
             case TokenType.LShift:
-                lnum = lhs.value.longValue();
-                if (lhs.value - lnum != 0)
-                    return new Token(TokenType.Error, 0.0);
-                rnum = rhs.value.longValue();
-                if (rhs.value - rnum != 0)
-                    return new Token(TokenType.Error, 0.0);
-                out = Double.parseDouble((lnum << rnum)+"");
+                if (lhs.value % 1 != 0 || rhs.value % 1 != 0)
+                    return new Token(TokenType.Error, 0);
+                out = (long) lhs.value << (long) rhs.value;
                 break;
             case TokenType.RShift:
-                lnum = lhs.value.longValue();
-                if (lhs.value - lnum != 0)
-                    return new Token(TokenType.Error, 0.0);
-                rnum = rhs.value.longValue();
-                if (rhs.value - rnum != 0)
-                    return new Token(TokenType.Error, 0.0);
-                out = Double.parseDouble((lnum >> rnum)+"");
+                if (lhs.value % 1 != 0 || rhs.value % 1 != 0)
+                    return new Token(TokenType.Error, 0);
+                out = (long) lhs.value >> (long) rhs.value;
                 break;
             case TokenType.Xor:
-                lnum = lhs.value.longValue();
-                if (lhs.value - lnum != 0)
-                    return new Token(TokenType.Error, 0.0);
-                rnum = rhs.value.longValue();
-                if (rhs.value - rnum != 0)
-                    return new Token(TokenType.Error, 0.0);
-                out = Double.parseDouble((lnum ^ rnum)+"");
+                if (lhs.value % 1 != 0 || rhs.value % 1 != 0)
+                    return new Token(TokenType.Error, 0);
+                out = (long) lhs.value ^ (long) rhs.value;
                 break;
             case TokenType.Or:
-                lnum = lhs.value.longValue();
-                if (lhs.value - lnum != 0)
-                    return new Token(TokenType.Error, 0.0);
-                rnum = rhs.value.longValue();
-                if (rhs.value - rnum != 0)
-                    return new Token(TokenType.Error, 0.0);
-                out = Double.parseDouble((lnum | rnum)+"");
+                if (lhs.value % 1 != 0 || rhs.value % 1 != 0)
+                    return new Token(TokenType.Error, 0);
+                out = (long) lhs.value | (long) rhs.value;
                 break;
             case TokenType.And:
-                lnum = lhs.value.longValue();
-                if (lhs.value - lnum != 0)
-                    return new Token(TokenType.Error, 0.0);
-                rnum = rhs.value.longValue();
-                if (rhs.value - rnum != 0)
-                    return new Token(TokenType.Error, 0.0);
-                out = Double.parseDouble((lnum & rnum)+"");
+                if (lhs.value % 1 != 0 || rhs.value % 1 != 0)
+                    return new Token(TokenType.Error, 0);
+                out = (long) lhs.value & (long) rhs.value;
                 break;
             case TokenType.Exp:
                 out = Math.pow(lhs.value, rhs.value);
                 break;
             default:
-                return new Token(TokenType.Error, 0.0);
+                return new Token(TokenType.Error, 0);
         }
         return new Token(TokenType.Number, out);
     }
 
-    Double expr() {
+    double expr() throws Error {
         Token out = expr_bp(0);
-
-        Token l = lexer.Last();
-        if (l.type != TokenType.Eof) {
-            return null;
-        }
-
-        if (out.type != TokenType.Number) {
-            return null;
-        }
-        return out.value;
+        if (Peek().type == TokenType.Eof && out.type == TokenType.Number)
+            return out.value;
+        throw new Error("Can't compile the input");
     }
 
-    Token expr_bp(int min_bp) {
-        Token lhs = lexer.Next();
+    private Token expr_bp(int min_bp) {
+        Token lhs = Next();
         switch (lhs.type) {
             case TokenType.Number:
                 break;
             case TokenType.LParen:
                 lhs = expr_bp(0);
-                Token t = lexer.Next();
+                Token t = Next();
                 if (t.type != TokenType.RParen)
-                    return new Token(TokenType.Error, 0.0);
+                    return new Token(TokenType.Error, 0);
                 break;
             default:
                 int[] bp = prefixBindingPower(lhs);
@@ -258,30 +234,28 @@ public class Parser {
                 lhs = prefixOp(lhs, rhs);
         }
         while (true) {
-            Token op = lexer.Peek();
+            Token op = Peek();
             if (op.type == TokenType.Eof)
                 break;
             int[] bp = postfixBindingPower(op);
             if (bp[0] != -1) {
                 if (bp[0] < min_bp)
                     break;
-                lexer.Next();
+                Next();
                 lhs = posfixOp(op, lhs);
                 continue;
             }
             bp = infixBindingPower(op);
-            if (bp[0] != -1 && bp[1] !=-1) {
+            if (bp[0] != -1 && bp[1] != -1) {
                 if (bp[0] < min_bp)
                     break;
-                lexer.Next();
+                Next();
                 Token rhs = expr_bp(bp[1]);
                 lhs = infixOp(op, lhs, rhs);
                 continue;
             }
             break;
-            // return new Token(TokenType.Error, 0.0);
         }
         return lhs;
     }
-
 }

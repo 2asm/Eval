@@ -38,5 +38,5 @@ public enum TokenType {
     Tan,
     Deg, // degree to radian
     Log, // natural log
-    Abs;
+    Abs,;
 }
