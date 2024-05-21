@@ -29,3 +29,8 @@ Try here: https://2asm.github.io/calculator
 
 ### Number format 
 * A(.B)?
+
+## Reference
+  - https://en.wikipedia.org/wiki/Operator-precedence_parser
+  - https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html <br>
+
